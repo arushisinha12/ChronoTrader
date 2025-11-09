@@ -1,0 +1,66 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChronoMarket Leaderboard</title>
+    <style>
+        /* CSS from game_console.html goes here */
+        /* For brevity, I'll omit the repetitive CSS, but ensure you include it 
+           or link to a shared static CSS file! */
+        body {
+            font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;  
+            margin: 0;
+            background-color: #2a251e; /* Example background */
+            color: #C0C0C0; 
+            font-size: 15px; 
+            font-weight: bold; 
+        }
+        .container {
+            max-width: 800px;  
+            margin: 50px auto; 
+            padding: 25px; 
+            border: 4px solid #d4af37;
+            background: rgba(90, 81, 70, 0.3);
+        }
+        h1 { font-family: 'Trajan Pro', serif; color: #d4af37; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #6d5b4a; }
+        th { background-color: rgba(109, 91, 74, 0.7); color: #f5deb3; text-transform: uppercase; }
+        td:nth-child(3) { color: #d4af37; font-weight: bold; } /* Highlight Time Column */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 Temporal Leaderboard: Quickest Run</h1>
+
+        <table style="margin: 20px auto;">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Chrono-Trader</th>
+                    <th>Time Achieved</th>
+                    <th>Raw Seconds</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in top_scores %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ entry.player_name }}</td>
+                    <td>{{ entry.time_friendly }}</td>
+                    <td>({{ entry.time_seconds }}s)</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" style="text-align: center;">No completed missions recorded yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <p style="text-align: center; margin-top: 30px;">
+            <a href="{% url 'game_app:game_console' %}" class="btn" style="padding: 10px 20px; background-color: #d4af37; color: #2a251e; text-decoration: none; border-radius: 3px;">Return to Console</a>
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,149 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChronoMarket Console - Protocol Complete</title>
+    <style>
+        /* Inheriting base styles from the main console for consistency */
+        :root {
+            --color-bg-dark: #2a251e;
+            --color-font: #f5deb3;
+            --color-success: #5c8e23;
+            --color-danger: #8a2a2a;
+            --color-era-highlight: #d4af37; /* Default Gold */
+            --color-era-highlight-rgb: 212, 175, 55;
+            --color-border: #6d5b4a;
+        }
+
+        body {
+            font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;  
+            margin: 0;
+            background-color: var(--color-bg-dark);
+            color: var(--color-font);
+            line-height: 1.45;  
+            font-size: 16px; 
+            font-weight: bold; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url("{% static 'backgrounds/ancient_rome.jpg' %}"); /* Default victory background */
+            background-size: cover;
+            background-attachment: fixed;
+        }
+
+        .win-container {
+            width: 90%;
+            max-width: 650px;
+            padding: 40px;
+            border-radius: 5px;
+            text-align: center;
+            
+            /* Victory Styling */
+            background-color: rgba(42, 37, 30, 0.9); /* Opaque dark background */
+            border: 5px solid var(--color-success); /* Green border for victory */
+            box-shadow: 0 0 40px rgba(var(--color-era-highlight-rgb), 0.8), 0 0 20px var(--color-success);
+        }
+
+        h1 {
+            font-family: 'Trajan Pro', serif;   
+            color: var(--color-success);
+            font-size: 3em;
+            text-shadow: 0 0 10px var(--color-success);
+            border-bottom: 3px solid var(--color-era-highlight);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .message {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            color: var(--color-font);
+        }
+
+        .stats-box {
+            background-color: rgba(var(--color-era-highlight-rgb), 0.08);
+            border: 2px solid var(--color-border);
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-radius: 3px;
+        }
+
+        .stats-box h2 {
+            font-family: 'Trajan Pro', serif;
+            color: var(--color-era-highlight);
+            font-size: 1.5em;
+            margin-top: 0;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .stats-item {
+            padding: 8px 0;
+            font-size: 1.1em;
+        }
+
+        .highlight {
+            color: var(--color-era-highlight);
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-left: 10px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        /* Reset button styling */
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .btn-danger {
+            background-color: var(--color-danger);
+            color: var(--color-font);
+        }
+        .btn:hover { transform: translateY(-1px); opacity: 0.9; box-shadow: 0 3px 6px rgba(0,0,0,0.4); }
+    </style>
+</head>
+<body>
+    <div class="win-container">
+        <h1>PROTOCOL COMPLETE: VICTORY</h1>
+        
+        <p class="message">
+            Your Temporal Drive is fully fueled. You successfully navigated the timelines 
+            to acquire the required <span class="highlight" style="font-size: 1.1em;">{{ FUEL_GOAL }} Gold Coins</span>.
+        </p>
+
+        <div class="stats-box">
+            <h2>FINAL CHRONOLOGY REPORT</h2>
+            
+            <p class="stats-item">
+                Time Taken: <span class="highlight">{{ final_time }}</span>
+            </p>
+            
+            <p class="stats-item">
+                New Best Time: <span class="highlight" style="color: var(--color-success);">{{ best_time_friendly }}</span>
+            </p>
+            
+            <p class="stats-item">
+                Final Credits Balance: <span class="highlight">{{ player.credits }}</span>
+            </p>
+        </div>
+        
+        <form action="{% url 'game_app:reset_game' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Initiate New Protocol / Restart</button>
+        </form>
+    </div>
+</body>
+</html>

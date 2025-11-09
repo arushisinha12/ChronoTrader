@@ -1,0 +1,700 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChronoMarket Console - Exact Reference Match</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Trajan+Pro&display=swap'); /* Assuming Trajan Pro can be imported or is locally available */
+
+        :root {
+            /* --- BASE ROMAN DEFAULT AESTHETIC (Matches Reference Image) --- */
+            --color-bg-dark: #2a251e;       /* Deep Earthy Brown (Overall darker tone) */
+            /* Lighter brown for main container */
+            --color-main-container-bg: #5a5146; 
+            /* Lighter, smokier brown for inner cards */
+            --color-card-bg: #6b6357;       
+            --color-border: #6d5b4a;        /* Earthy brown border */
+            --color-input-bg: #2e2623;      /* Near Black for inputs */
+            --color-font: #f5deb3;          /* Wheat (Light text) */
+
+            /* --- ERA SPECIFIC COLORS (DEFAULT TO ROMAN GOLD for the screenshot) --- */
+            --color-era-highlight: #d4af37;     /* Primary Gold/Accent */
+            --color-era-secondary: #8b4513;     /* Saddle Brown/Subtle Accent */
+
+            /* --- DYNAMIC ALERT COLORS (Standardized) --- */
+            --color-success: #5c8e23;       /* Olive Green */
+            --color-warning: #cc7722;       /* Burnt Orange */
+            --color-danger: #8a2a2a;        /* Dark Red */
+
+            /* --- TABLET COLORS (for modal) */
+            --color-tablet-bg: #383129;     
+            --color-tablet-accent: var(--color-era-highlight);  
+            --color-tablet-border: #5e5349;
+
+            /* --- Background Overlay for Contrast --- */
+            /* Reduced opacity for a lighter side background (from 0.65 to 0.45) */
+            --background-overlay: rgba(0, 0, 0, 0.45); 
+
+            /* Default RGB values for fallback before JS runs */
+            --color-main-container-bg-rgb: 90, 81, 70;
+            --color-card-bg-rgb: 107, 99, 87;
+            --color-era-highlight-rgb: 212, 175, 55;
+            --color-border-rgb: 109, 91, 74;
+        }
+        
+        body {
+            font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;  
+            margin: 0;
+            background-color: var(--color-bg-dark);
+            color: var(--color-font);
+            line-height: 1.45;  
+            font-size: 15px; /* INCREASED BASE FONT SIZE for general text (including p) */
+            font-weight: bold;  
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center center;
+            transition: background-image 1s ease-in-out;
+            /* The linear gradient uses the lighter --background-overlay */
+            background-image: linear-gradient(var(--background-overlay), var(--background-overlay)), var(--initial-bg-image);
+        }
+
+        .container {
+            max-width: 960px;   
+            margin: 30px auto; /* Centered with top/bottom margin */
+            padding: 25px; /* Generous padding inside */
+            border-radius: 3px; 
+            /* Background opacity: 0.3 */
+            background: rgba(var(--color-main-container-bg-rgb), 0.3);  
+            /* Stronger outer shadow, more vibrant border */
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.9), 0 0 15px rgba(255, 255, 255, 0.15); 
+            /* Main Border: 4px solid gold */
+            border: 4px solid rgba(var(--color-era-highlight-rgb), 1);  
+        }
+        
+        h1 {
+            font-family: 'Trajan Pro', serif;   
+            color: var(--color-era-highlight);  
+            text-align: center;
+            /* Stronger border-bottom, increased opacity */
+            border-bottom: 2px solid rgba(var(--color-border-rgb), 0.8);    
+            padding-bottom: 10px;  
+            margin-bottom: 15px;   
+            font-size: 2.2em;  
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.8);    
+            letter-spacing: 1px;   
+            text-transform: uppercase; 
+        }
+        h1 .icon { /* Icon next to H1 */
+            font-size: 0.8em;  
+            color: var(--color-era-highlight);
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+        h2 {
+            font-family: 'Trajan Pro', serif;
+            color: var(--color-era-secondary); /* Era name / Trader Status header */
+            font-size: 1.3em;  
+            text-transform: uppercase;
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+        h3 {
+            font-family: 'Trajan Pro', serif;
+            color: var(--color-era-highlight); /* Inventory / Market / Time Jump headers */
+            margin-top: 0;
+            font-size: 1.1em;  
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        /* Prices were already 1.1em relative to the body size (now 16.5px) */
+        .credits, .fuel-status, .text-strong {  
+            font-weight: bold;  
+            color: var(--color-font);  
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+            font-size: 1.1em;  
+        }
+
+        /* --- MESSAGE BOXES (exactly as per image) --- */
+        .message-success, .message-error, .message-info {
+            padding: 10px 15px; 
+            margin-bottom: 15px;   
+            font-size: 1em; 
+            border-radius: 4px; 
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.5); /* Inner shadow for depth */
+            font-weight: bold;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.4);
+            border: 1px solid rgba(0,0,0,0.3);
+            list-style: none;
+        }
+        .message-success { background: var(--color-success); color: var(--color-font); }   
+        .message-error  { background: var(--color-danger); color: var(--color-font); }   
+        .message-info   { background: var(--color-warning); color: var(--color-bg-dark); }
+        
+        /* --- STATUS BOX LAYOUT (Top section) --- */
+        .status-box {
+            display: flex;  
+            justify-content: space-between; 
+            align-items: flex-start; /* Align to top for multi-line content */
+            /* Background opacity: 0.15 */
+            background-color: rgba(var(--color-card-bg-rgb), 0.15); 
+            padding: 15px 20px; 
+            border-radius: 3px; 
+            margin-bottom: 20px;   
+            /* Match main container border */
+            border: 4px solid rgba(var(--color-era-highlight-rgb), 1);
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.7); /* Stronger inner shadow */
+            line-height: 1.3;
+        }
+        .status-group { 
+            display: flex;  
+            gap: 30px; /* Space between Era and Trader status */
+            flex-grow: 1; /* Allow to take available space */
+        }
+        .status-section { 
+            padding: 0; 
+            border: none;  
+            background: none;  
+            margin-bottom: 0;  
+        }
+        .status-section p { margin: 0; padding: 0;} /* P text is now 15px */
+
+        .status-controls { 
+            display: flex;  
+            align-items: center;  
+            gap: 10px; /* Space between Instruction and Wipe button */
+            margin-left: 20px; /* Push controls to the right */
+        }
+
+        /* --- TRADE AREA LAYOUT (Inventory & Market) --- */
+        .trade-area {   
+            display: flex;  
+            gap: 20px;  
+            margin-bottom: 20px;
+        }
+        .inventory-section, .market-section {
+            /* Background opacity: 0.15 */
+            background-color: rgba(var(--color-card-bg-rgb), 0.15); 
+            padding: 15px; 
+            border-radius: 3px; 
+            /* Match main container border */
+            border: 4px solid rgba(var(--color-era-highlight-rgb), 1);
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.7); /* Stronger inner shadow */
+            flex: 1; /* Both take equal width */
+        }
+        .inventory-section { flex: 1.2; } /* Inventory slightly wider as per image */
+        .market-section { flex: 1; }   
+
+        table { 
+            width: 100%;   
+            border-collapse: collapse; 
+            margin-top: 10px;  
+            border-spacing: 0; /* Remove default spacing */
+        }
+        th, td { 
+            padding: 8px 5px;  
+            text-align: left;  
+            /* More opaque table row borders */
+            border-bottom: 1px solid rgba(var(--color-border-rgb), 0.7);   
+            vertical-align: middle; /* Align text vertically */
+        }
+        th {
+            /* Table header background more opaque for contrast */
+            background-color: rgba(var(--color-border-rgb), 0.7);  
+            color: var(--color-font);
+            text-transform: uppercase;
+            font-size: 0.9em; /* Adjusted relative size to compensate for body size increase */
+            letter-spacing: 0.5px;
+            padding: 10px 5px;
+        }
+        tbody tr:last-child td { border-bottom: none; } /* No border on last row */
+        
+        /* --- LIST ITEM STYLING (Stars for inventory/market) --- */
+        ul.item-list {
+            list-style: none; /* Remove default bullet */
+            padding: 0;
+            margin: 0;
+        }
+        ul.item-list li {
+            padding: 5px 0 5px 20px; /* Indent text */
+            position: relative;
+            /* More opaque list item borders */
+            border-bottom: 1px solid rgba(var(--color-border-rgb), 0.5);
+        }
+        ul.item-list li:last-child {
+            border-bottom: none;
+        }
+        ul.item-list li::before {
+            content: '⭐'; /* Star icon */
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+            color: var(--color-era-highlight);
+        }
+
+        /* --- BUTTON STYLES --- */
+        .btn {
+            padding: 8px 15px;  
+            border: none;
+            border-radius: 3px; 
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85em; /* Adjusted relative size to compensate for body size increase */
+            transition: background-color 0.2s, transform 0.1s;
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            white-space: nowrap; /* Prevent buttons from wrapping text */
+        }
+        .btn-primary {  
+            background-color: var(--color-era-highlight);  
+            color: var(--color-bg-dark); /* Dark text on gold button */
+        }  
+        .btn-success { background-color: var(--color-success); color: var(--color-font); }  
+        .btn-warning { background-color: var(--color-warning); color: var(--color-bg-dark); }
+        .btn-danger { background-color: var(--color-danger); color: var(--color-font); }
+        .btn:hover { transform: translateY(-1px); opacity: 0.9; box-shadow: 0 3px 6px rgba(0,0,0,0.4); }  
+        
+        .trade-form { display: inline-flex; align-items: center; gap: 5px; }  
+        input[type="number"] {
+            width: 50px;   
+            padding: 6px;  
+            border: 1px solid var(--color-border);
+            background: var(--color-input-bg); 
+            color: var(--color-font);
+            border-radius: 2px;
+            text-align: center;
+            /* The size is now 15px */
+            font-size: 1em; 
+            box-shadow: inset 1px 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        /* --- TIME JUMP CONTROLS --- */
+        .time-jump-controls {
+            margin-top: 25px;  
+            text-align: center;
+        }
+        .jump-form { display: inline-block; margin: 0 8px; }
+        .jump-form button { font-size: 0.95em; padding: 10px 20px; } 
+
+        /* --- ALL MODAL STYLES (Instructions + Win) --- */
+        .modal {
+            display: none; position: fixed; z-index: 100; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto;
+            background-color: rgba(0, 0, 0, 0.75);  
+            backdrop-filter: blur(4px); 
+        }
+        .modal-content {
+            background-color: var(--color-tablet-bg);  
+            color: var(--color-font);  
+            margin: 10% auto; padding: 30px;  
+            border: 3px solid var(--color-era-highlight);  
+            width: 65%; max-width: 550px;  
+            border-radius: 0;  
+            box-shadow: 0 5px 20px var(--color-bg-dark), 0 0 15px rgba(var(--color-era-highlight-rgb), 0.5), inset 0 0 10px rgba(0, 0, 0, 0.8);  
+            position: relative; 
+            font-size: 1em; 
+        }
+        .close-btn { color: var(--color-danger); float: right; font-size: 34px; font-weight: normal; cursor: pointer; line-height: 1; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .close-btn:hover { color: var(--color-era-highlight); }  
+        .modal h2 {
+            font-family: 'Trajan Pro', serif;
+            color: var(--color-era-highlight);  
+            border-bottom: 2px solid var(--color-tablet-border);  
+            padding-bottom: 12px; margin-bottom: 18px; font-size: 1.6em;  
+            text-transform: uppercase; letter-spacing: 1px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);  
+        }
+        .modal ul { list-style-type: none; padding-left: 0; color: var(--color-font); }
+        .modal li { margin-bottom: 10px; padding-left: 25px; position: relative; }
+        .modal li:before {
+            content: '★'; position: absolute; left: 0;
+            color: var(--color-era-highlight);  
+            font-size: 1.1em; text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+        }
+        .modal .text-strong { 
+            color: var(--color-font); 
+            text-shadow: none; 
+            font-size: 1em; 
+        }
+
+        /* --- WIN MODAL SPECIFIC STYLES --- */
+        #winModal .modal-content {
+            border-color: var(--color-success); /* Green border for win */
+            box-shadow: 0 5px 20px var(--color-bg-dark), 0 0 15px rgba(var(--color-success-rgb), 0.5), inset 0 0 10px rgba(0, 0, 0, 0.8);
+            text-align: center;
+        }
+
+        #winModal h2 {
+            color: var(--color-success); 
+            text-shadow: 0 0 10px rgba(92, 142, 35, 0.7);
+            border-bottom-color: var(--color-success);
+        }
+        
+        .win-stats {
+            background-color: rgba(var(--color-era-highlight-rgb), 0.05);
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid var(--color-border);
+        }
+        
+        .win-stats h3 {
+            color: var(--color-era-highlight);
+            margin: 0 0 10px;
+        }
+        .win-stats .text-strong {
+            color: var(--color-success);
+        }
+
+        /* Mobile styles */
+        @media (max-width: 768px) {  
+            .container { padding: 15px; margin: 15px auto; }
+            h1 { font-size: 1.8em; padding-bottom: 8px; margin-bottom: 12px; }
+            h2 { font-size: 1.1em; }
+            h3 { font-size: 1em; }
+            .status-box { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; }
+            .status-group { flex-direction: column; gap: 10px; width: 100%; }
+            .status-controls { width: 100%; justify-content: space-between; margin-left: 0; }
+            .trade-area { flex-direction: column; gap: 15px; }
+            .inventory-section, .market-section { flex: 1; width: 100%; }
+            .btn { padding: 7px 12px; font-size: 0.8em; }
+            .jump-form button { font-size: 0.9em; padding: 8px 15px; }
+            th, td { padding: 7px 5px; font-size: 0.85em; }
+            .modal-content { width: 90%; margin: 5% auto; padding: 25px; }
+        }
+    </style>
+</head>
+<body data-bg-url="{% static 'backgrounds/' %}{{ background_image_filename }}">
+
+    <div id="winModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeWin">&times;</span>
+            <h2>SUCCESS! TEMPORAL DRIVE FUELED</h2>
+            
+            <p>Protocol complete. Your chronometer is stable, and the asset goal has been met.</p>
+
+            <div class="win-stats">
+                <h3>Final Chronology Report</h3>
+                <p>Time Taken: <span class="text-strong">{{ final_time }}</span></p>
+                <p>Best Time Record: <span class="text-strong">{{ best_time_friendly }}</span></p>
+                <p>Credits Remaining: <span class="text-strong">{{ player.credits }}</span></p>
+            </div>
+            
+            <p style="margin-top: 20px;">Initiate a new protocol to attempt a faster run.</p>
+
+            <form action="{% url 'game_app:reset_game' %}" method="post" class="jump-form" style="display: block; margin: 15px 0 0;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Start New Protocol</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h1>ChronoMarket Console <span class="icon">🏛️</span></h1>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message-{{ message.tags }}">
+                    {{ message|safe }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="status-box">
+            <div class="status-group">
+                <div class="status-section">
+                    <h3>Current Era: <span class="text-strong">{{ era_name }}</span></h3>
+                    <h3>Credits: <span class="credits text-strong">{{ player.credits }}</span></h3>
+                    <p>Currency: <span class="text-strong">{{ era_data.currency }}</span></p>
+                </div>
+                <div class="status-section">
+                    <h3>Trader Status</h3>
+                    <p>Time Elapsed: <span id="time-display" class="text-strong">00m 00s</span></p> 
+                    <h3>Time Fuel (Gold Coins): <span class="fuel-status text-strong">{{ fuel_count }}/{{ FUEL_GOAL }}</span></h3>
+                </div>
+            </div>
+
+            <div class="status-controls">
+                <a href="{% url 'game_app:leaderboard_view' %}" class="btn btn-primary">Leaderboard</a>
+                <button id="showInstructionsBtn" class="btn btn-warning">Instructions</button>
+                <form action="{% url 'game_app:reset_game' %}" method="post" class="jump-form" style="margin-left: 0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Wipe/New Protocol</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="trade-area">
+
+            <div class="inventory-section">
+                <h3>Inventory Hold (Assets for Sale)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Sell Price</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventory %}
+                            {% if item.quantity > 0 %}
+                                <tr>
+                                    <td>
+                                        <ul class="item-list"><li>
+                                            {{ item.item_name|title }}
+                                            {# REMOVED: The conditional (LOCKED) display tag is removed entirely. #}
+                                        </li></ul>
+                                    </td>
+                                    <td><span class="text-strong">{{ item.quantity }}</span></td>
+                                    <td>
+                                        {% if item.sell_price %}
+                                            <span class="text-strong">{{ item.sell_price }}</span> {{ era_data.currency }}
+                                        {% else %}
+                                            <span style="color: var(--color-danger); font-style: italic;">*No Demand Signal*</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {# CRITICAL FIX: Only check for sell_price. The item is ALWAYS considered sellable now. #}
+                                        {% if item.sell_price %}
+                                            <form action="{% url 'game_app:trade_item' %}" method="post" class="trade-form">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="sell">
+                                                <input type="hidden" name="item_name" value="{{ item.item_name }}">
+                                                <input type="number" name="quantity" value="1" min="1" max="{{ item.quantity }}">
+                                                <button type="submit" class="btn btn-primary">SELL</button>
+                                            </form>
+                                        {% else %}
+                                            <button type="button" class="btn btn-danger" disabled>NO DEMAND</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% empty %}
+                            <tr><td colspan="4" style="text-align: center; color: var(--color-era-secondary);">Inventory Empty. Acquire new assets.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="market-section">
+                <h3>Local Market Pulse (Items for Acquisition)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Buy Price</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item_name, price in era_data.trade_items.items %}
+                            <tr>
+                                <td>
+                                    <ul class="item-list"><li>{{ item_name|title }}</li></ul>
+                                </td>
+                                <td><span class="text-strong">{{ price }}</span> {{ era_data.currency }}</td>
+                                <td>
+                                    <form action="{% url 'game_app:trade_item' %}" method="post" class="trade-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="buy">
+                                        <input type="hidden" name="item_name" value="{{ item_name }}">
+                                        <input type="number" name="quantity" value="1" min="1">
+                                        <button type="submit" class="btn btn-success">BUY</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <div class="time-jump-controls">
+            <h3>Initiate Temporal Shift</h3>
+
+            <form action="{% url 'game_app:time_jump_backward' %}" method="post" class="jump-form">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warning">Jump Backward (Retreat) ⏪</button>
+            </form>
+
+            <form action="{% url 'game_app:time_jump_forward' %}" method="post" class="jump-form">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Initiate Jump Forward (Advance) 🚀</button>
+            </form>
+        </div>
+
+    </div>
+
+    <div id="instructionsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeInstructions">&times;</span>
+            <h2>ChronoMarket Protocol Briefing (Instructions)</h2>
+            <p>Welcome, Chrono-Trader! Your mission is to gather <strong class="text-strong">{{ FUEL_GOAL }} Gold Coins</strong> to power your main Temporal Drive before you are trapped in an undesirable era.</p>
+
+            <h3>The Rules of Temporal Trade:</h3>
+            <ul>
+                <li><strong class="text-strong">Acquisition (BUY):</strong> Purchase items in the <strong class="text-strong">Local Market</strong> section. You must have enough <strong class="text-strong">Credits</strong>.</li>
+                <li><strong class="text-strong">Liquidation (SELL):</strong> Sell items from your <strong class="text-strong">Inventory Hold</strong>. Prices change dramatically across eras, so buy low and sell high!</li>
+
+                <li><strong class="text-strong">Time Jumps:</strong> Use the controls at the bottom to travel to the <strong class="text-strong">Next Era (Forward)</strong> or <strong class="text-strong">Previous Era (Backward)</strong>. This updates the local market prices.</li>
+                <li><strong class="text-strong">Fuel Goal:</strong> <strong class="text-strong">Gold Coins</strong> are the universal fuel. They are currently priced for acquisition in the markets. Accumulate {{ FUEL_GOAL }} to win.</li>
+                <li><strong class="text-strong">Wipe/New Protocol:</strong> This resets your credits to 100, clears your inventory, and restarts you in the first era.</li>
+            </ul>
+
+            <p style="color: var(--color-font);">Success depends entirely on maximizing profit margins across the timelines!</p>
+        </div>
+    </div>
+
+    <script>
+        // --- UTILITY ---
+        function hexToRgb(hex) {
+            let r = 0, g = 0, b = 0;
+            if (hex.length === 4) {
+                r = parseInt(hex[1] + hex[1], 16);
+                g = parseInt(hex[2] + hex[2], 16);
+                b = parseInt(hex[3] + hex[3], 16);
+            } else if (hex.length === 7) {
+                r = parseInt(hex.substring(1, 3), 16);
+                g = parseInt(hex.substring(3, 5), 16);
+                b = parseInt(hex.substring(5, 7), 16);
+            }
+            return `${r}, ${g}, ${b}`;
+        }
+        
+        // --- ERA COLOR PALETTES ---
+        const eraPalettes = {
+            'Ancient Rome': { highlight: '#E3CB78', secondary: '#8B4513', background_image: 'ancient_rome.jpg', },
+            'The Aztec Empire': { highlight: '#A9B84F', secondary: '#FF7D00', background_image: 'aztec_empire.jpg', },
+            'Ming Dynasty China': { highlight: '#99AACC', secondary: '#FFCC00', background_image: 'ming_dynasty_china.jpg', },
+            'Renaissance France': { highlight: '#E08D8D', secondary: '#D4AF37', background_image: 'renaissance_france2.jpg', },
+            'Victorian London': { highlight: '#C0C0C0', secondary: '#36454F', background_image: 'victorian_london.jpg', },
+        };
+
+        // --- DYNAMIC COLOR AND CONTRAST APPLICATION FUNCTION ---
+        function applyEraStyle() {
+            const eraNameElement = document.querySelector('.status-section .text-strong');
+            if (!eraNameElement) return;
+
+            const currentEra = eraNameElement.textContent.trim();
+            const palette = eraPalettes[currentEra] || eraPalettes['Ancient Rome'];
+            const rootStyle = document.documentElement.style;
+            
+            rootStyle.setProperty('--color-era-highlight', palette.highlight);
+            rootStyle.setProperty('--color-era-secondary', palette.secondary);
+            
+            // Set RGB values for dynamic highlights
+            rootStyle.setProperty('--color-era-highlight-rgb', hexToRgb(palette.highlight));
+
+            // Set the background image variable
+            const imageUrl = `url('{% static 'backgrounds/' %}${palette.background_image}')`;
+            rootStyle.setProperty('--initial-bg-image', imageUrl);
+        }
+
+        // --- TIMER LOGIC (Re-added) ---
+        const timeDisplay = document.getElementById('time-display');
+        // The timestamp needs to be passed from the Django view context
+        const gameStartTimestamp = "{{ game_start_timestamp }}"; 
+        let intervalId;
+
+        function updateTimer() {
+            if (!gameStartTimestamp || gameStartTimestamp === 'None') {
+                timeDisplay.textContent = '00m 00s';
+                return;
+            }
+
+            const startTime = parseInt(gameStartTimestamp);
+            if (isNaN(startTime)) return;
+
+            const now = Date.now();
+            const elapsedSeconds = Math.floor((now - startTime) / 1000);
+
+            const minutes = Math.floor(elapsedSeconds / 60);
+            const seconds = elapsedSeconds % 60;
+
+            timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            applyEraStyle(); /* Apply initial era style based on Django context */
+
+            // Set up RGB variables for all colors used in RGBA
+            const colorsToConvert = [
+                '--color-card-bg', 
+                '--color-main-container-bg', 
+                '--color-success', 
+                '--color-warning', 
+                '--color-danger', 
+                '--color-border'
+            ];
+            
+            const rootStyle = document.documentElement.style;
+            const computedStyle = getComputedStyle(document.documentElement);
+
+            colorsToConvert.forEach(prop => {
+                const hex = computedStyle.getPropertyValue(prop).trim();
+                rootStyle.setProperty(`${prop}-rgb`, hexToRgb(hex));
+            });
+
+
+            // --- MODAL LOGIC (Instructions + Win) ---
+            const instructionsModal = document.getElementById("instructionsModal");
+            const showInstructionsBtn = document.getElementById("showInstructionsBtn");
+            const closeInstructionsBtn = document.getElementById("closeInstructions");
+            const winModal = document.getElementById("winModal");
+            const closeWinBtn = document.getElementById("closeWin");
+
+            // General modal functions
+            function showModal(modalElement) { modalElement.style.display = "block"; }
+            function hideModal(modalElement) { modalElement.style.display = "none"; }
+
+            // Instructions Modal events
+            showInstructionsBtn.onclick = () => showModal(instructionsModal);
+            closeInstructionsBtn.onclick = () => hideModal(instructionsModal);
+            
+            // Win Modal events
+            closeWinBtn.onclick = () => hideModal(winModal);
+
+            // Close modal if user clicks outside of it
+            window.onclick = function(event) {
+                if (event.target == instructionsModal) {
+                    hideModal(instructionsModal);
+                }
+                if (event.target == winModal) {
+                    hideModal(winModal);
+                }
+            }
+
+            // Check if the game was just won (from Django context)
+            const winStatus = "{{ win_status|lower }}"; 
+            
+            if (winStatus === 'true') {
+                showModal(winModal);
+            }
+            
+            const showInstructionsOnLoad = "{{ show_instructions|yesno:'True,False' }}";
+            if (showInstructionsOnLoad === 'True') {
+                showModal(instructionsModal);
+            }
+
+            // --- TIMER START ---
+            if (gameStartTimestamp && gameStartTimestamp !== 'None') {
+                updateTimer(); // Initial call
+                if (winStatus !== 'true') {
+                    intervalId = setInterval(updateTimer, 1000);
+                }
+            } else {
+                timeDisplay.textContent = '00m 00s';
+            }
+        });
+    </script>
+</body>
+</html>
