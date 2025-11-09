@@ -298,7 +298,7 @@ def reset_game(request):
         "Welcome, Temporal Trader! Your new protocol is active. "
         "Your ultimate objective is to acquire 5 Gold Coins (Fuel). "
         "Use the Jump buttons to travel the timeline and exploit market shifts. "
-        "Remember: Items purchased locally are sold at a steep loss in the same era. You **must** travel to profit!"
+        "Remember: Items purchased locally are sold at a steep loss in the same era. You must travel to profit!"
     )
     messages.info(request, game_instructions)
     
