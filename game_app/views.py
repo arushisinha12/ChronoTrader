@@ -93,22 +93,38 @@ def game_console(request):
         'sell_prices': fluctuating_prices_data.get('sell_prices', {}),
     }
 
-    # 3. PREPARE INVENTORY FOR DISPLAY
+    # 3. PREPARE INVENTORY FOR DISPLAY AND CHECK LOSS CONDITION
     inventory = []
     fuel_count = 0
     player_inventory = Inventory.objects.filter(player=player, quantity__gt=0)
+    
+    # Calculate potential cash from selling ALL inventory items at current market prices
+    potential_sell_value = 0
+    sell_prices = fluctuating_prices_data.get('sell_prices', {})
     
     for inv_item in player_inventory:
         if inv_item.item_name.lower() == 'gold coin':
             fuel_count += inv_item.quantity
             
+        item_sell_price = sell_prices.get(inv_item.item_name)
+        if item_sell_price is not None:
+            potential_sell_value += inv_item.quantity * item_sell_price
+            
         item_data = {
             'item_name': inv_item.item_name,
             'quantity': inv_item.quantity,
             'purchase_era_index': inv_item.purchase_era_index, 
-            'sell_price': era_data_for_template['sell_prices'].get(inv_item.item_name),
+            'sell_price': item_sell_price,
         }
         inventory.append(item_data)
+
+    # --- LOSS CONDITION CHECK ---
+    total_potential_credits = player.credits + potential_sell_value
+    
+    if total_potential_credits < TIME_JUMP_COST and fuel_count < FUEL_GOAL:
+        messages.error(request, "GAME OVER! You have been stranded in time. Your current credits and total potential inventory value are below the cost of a temporal jump.")
+        return redirect('game_app:game_over')
+    # --------------------------
         
     # 4. HANDLE WIN CONDITION
     win_status = False
@@ -150,6 +166,7 @@ def game_console(request):
         'inventory': inventory,
         'fuel_count': fuel_count,
         'FUEL_GOAL': FUEL_GOAL,
+        'TIME_JUMP_COST': TIME_JUMP_COST, # Added for completeness
         'current_era_index': current_era_index, 
         'game_start_timestamp': player.game_start_time.timestamp() * 1000 if player.game_start_time else None,
         'best_time_friendly': best_time_friendly,
@@ -248,6 +265,7 @@ def trade_item(request):
 
         messages.success(request, f"Liquidated {quantity} x {item_name} for {revenue} credits.")
         
+    # After a trade, redirect back to the console which will re-run the loss check
     return redirect('game_app:game_console')
 
 def time_jump_forward(request):
@@ -268,6 +286,7 @@ def time_jump(request, direction):
 
     # CHECK AND DEDUCT COST
     if player.credits < TIME_JUMP_COST:
+        # NOTE: This check is also done in game_console, but it's crucial here too
         messages.error(request, f"INSUFFICIENT FUNDS. Cannot afford the temporal traversal fee of {TIME_JUMP_COST} credits.")
         return redirect('game_app:game_console')
     
@@ -317,7 +336,7 @@ def reset_game(request):
     player.current_era_index = 0
     player.current_era = ERA_ORDER[0]
     player.game_start_time = datetime.now(timezone.utc)
-    # FIX: DO NOT reset player.best_time_seconds here! It should persist.
+    # player.best_time_seconds persists
     # player.best_time_seconds = 0 
 
     # Generate initial prices for the starting era
@@ -373,3 +392,27 @@ def leaderboard_view(request):
         'leaderboard_entries': formatted_entries
     }
     return render(request, 'game_app/leaderboard.html', context)
+
+
+# --- NEW GAME OVER VIEW (FIXED FORMAT_TIME ISSUE) ---
+
+def game_over(request):
+    """Renders the game over screen when player can no longer afford a time jump."""
+    player = get_current_player(request)
+    if not player:
+        return redirect('game_app:start_game')
+    
+    # Reset game start time to mark the session as concluded
+    if player.game_start_time:
+        player.game_start_time = None 
+        player.save()
+    
+    # FIX: Calculate the friendly time string here before passing to context
+    best_time_friendly = format_time(player.best_time_seconds) if player.best_time_seconds > 0 else "N/A"
+        
+    context = {
+        'player': player,
+        'TIME_JUMP_COST': TIME_JUMP_COST,
+        'best_time_friendly': best_time_friendly, # Passing the pre-formatted string
+    }
+    return render(request, 'game_app/lose_screen.html', context)

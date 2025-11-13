@@ -13,4 +13,5 @@ urlpatterns = [
     path('jump/backward/', views.time_jump_backward, name='time_jump_backward'),
     path('reset/', views.reset_game, name='reset_game'),
     path('leaderboard/', views.leaderboard_view, name='leaderboard_view'),
+    path('game_over/', views.game_over, name='game_over'),
 ]
