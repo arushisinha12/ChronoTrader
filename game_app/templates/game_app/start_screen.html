@@ -1,0 +1,173 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChronoMarket Console - Initiate Protocol</title>
+    <style>
+        /* Inheriting base styles for consistency */
+        :root {
+            --color-bg-dark: #2a251e;
+            --color-font: #f5deb3;
+            --color-primary: #347683; /* New primary color for buttons/focus */
+            --color-era-highlight: #d4af37; /* Default Gold */
+            --color-era-highlight-rgb: 212, 175, 55;
+            --color-border: #6d5b4a;
+        }
+
+        body {
+            font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;  
+            margin: 0;
+            background-color: var(--color-bg-dark);
+            color: var(--color-font);
+            line-height: 1.45;  
+            font-size: 16px; 
+            font-weight: bold; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            /* Placeholder background image similar to the original theme */
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url("{% static 'backgrounds/ancient_rome.jpg' %}"); 
+            background-size: cover;
+            background-attachment: fixed;
+        }
+
+        .start-container {
+            width: 90%;
+            max-width: 500px;
+            padding: 40px;
+            border-radius: 5px;
+            text-align: center;
+            
+            /* Console Styling */
+            background-color: rgba(42, 37, 30, 0.9); 
+            border: 5px solid var(--color-era-highlight);
+            box-shadow: 0 0 25px rgba(var(--color-era-highlight-rgb), 0.5);
+        }
+
+        h1 {
+            font-family: 'Trajan Pro', serif;   
+            color: var(--color-era-highlight);
+            font-size: 2.5em;
+            text-shadow: 0 0 8px var(--color-era-highlight);
+            border-bottom: 3px solid var(--color-era-highlight);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .message {
+            font-size: 1.1em;
+            margin-bottom: 25px;
+            color: var(--color-font);
+        }
+
+        /* Message handling (for errors/info from Django) */
+        .django-messages {
+            margin-bottom: 20px;
+            list-style: none;
+            padding: 0;
+        }
+        .django-messages li {
+            padding: 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2a251e;
+        }
+        .django-messages li.error {
+            background-color: #f7a0a0; 
+        }
+        .django-messages li.info {
+            background-color: #d4af37;
+        }
+
+        /* Form styling */
+        .input-group {
+            margin-bottom: 30px;
+        }
+
+        .player-input {
+            width: 80%;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 1.1em;
+            border: 2px solid var(--color-border);
+            border-radius: 3px;
+            background-color: #3b352f;
+            color: var(--color-font);
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .player-input:focus {
+            border-color: var(--color-primary);
+        }
+        
+        /* Button styling */
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: var(--color-font);
+        }
+        .btn:hover { 
+            transform: translateY(-1px); 
+            opacity: 0.9; 
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4); 
+        }
+    </style>
+</head>
+<body>
+    <div class="start-container">
+        <h1>TEMPORAL TRADER PROTOCOL</h1>
+        
+        <p class="message">
+            Access to the ChronoMarket requires valid Temporal Trader identification. 
+            Enter your known name below to initiate (or resume) your protocol.
+        </p>
+
+        {% if messages %}
+            <ul class="django-messages">
+                {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <form action="{% url 'game_app:start_game' %}" method="post">
+            {% csrf_token %}
+            <div class="input-group">
+                <label for="player_name" style="display: block; margin-bottom: 10px;">ENTER IDENTIFIER:</label>
+                <input 
+                    type="text" 
+                    id="player_name" 
+                    name="player_name" 
+                    class="player-input" 
+                    placeholder="e.g., Captain Chronos" 
+                    required 
+                    autofocus
+                    maxlength="50"
+                >
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                Initiate Protocol
+            </button>
+        </form>
+    </div>
+</body>
+</html>

@@ -7,12 +7,10 @@
     <title>ChronoMarket Leaderboard</title>
     <style>
         /* CSS from game_console.html goes here */
-        /* For brevity, I'll omit the repetitive CSS, but ensure you include it 
-           or link to a shared static CSS file! */
         body {
             font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;  
             margin: 0;
-            background-color: #2a251e; /* Example background */
+            background-color: #2a251e; 
             color: #C0C0C0; 
             font-size: 15px; 
             font-weight: bold; 
@@ -45,11 +43,11 @@
                 </tr>
             </thead>
             <tbody>
-                {% for entry in top_scores %}
+                {% for entry in leaderboard_entries %}
                 <tr>
                     <td>{{ forloop.counter }}</td>
                     <td>{{ entry.player_name }}</td>
-                    <td>{{ entry.time_friendly }}</td>
+                    <td>{{ entry.time }}</td>
                     <td>({{ entry.time_seconds }}s)</td>
                 </tr>
                 {% empty %}

@@ -1,53 +1,48 @@
-# game_app/models.py
-
 from django.db import models
-from django.contrib.auth.models import User
-# NOTE: If using Django < 3.1, you may need to use: 
-# from django.contrib.postgres.fields import JSONField 
+# JSONField is standard in recent Django versions (3.1+).
+# If using older Django/Postgres, ensure necessary imports/settings.
 
 class Player(models.Model):
-    # Default fields
+    """Stores the persistent data for a single Temporal Trader profile."""
+    player_name = models.CharField(max_length=100, unique=True, verbose_name="Trader Identifier", default="ChronoTrader")
     credits = models.IntegerField(default=100)
-    current_era = models.CharField(max_length=50, default='Ancient Rome')
     current_era_index = models.IntegerField(default=0)
-    # 🆕 NEW: Field to store the current, stable, fluctuating prices for the era
-    current_prices = models.JSONField(default=dict) 
+    current_era = models.CharField(max_length=50, default='Stone Age')
+    
+    # Game Time Tracking
+    game_start_time = models.DateTimeField(null=True, blank=True)
+    best_time_seconds = models.IntegerField(default=0, verbose_name="Personal Best Time (s)")
+    
+    # Store dynamic market prices for the current era
+    current_prices = models.JSONField(default=dict)
 
     def __str__(self):
-        return f"Time Trader Player ({self.current_era})"
-    
-    game_start_time = models.DateTimeField(null=True, blank=True)
-    best_time_seconds = models.IntegerField(default=0) # To store final score
+        return f"Trader: {self.player_name} ({self.credits} credits)"
 
 class Inventory(models.Model):
-    player = models.ForeignKey(Player, on_delete=models.CASCADE)
+    """Stores items possessed by a Player."""
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='inventory')
     item_name = models.CharField(max_length=50)
     quantity = models.IntegerField(default=0)
-    
-    # 🚨 CRITICAL ADDITION: Tracks the era index where the item was purchased.
     purchase_era_index = models.IntegerField(default=-1) 
 
     class Meta:
+        # Ensures a player can only hold one entry per item type
         unique_together = ('player', 'item_name')
+        verbose_name_plural = "Inventories"
 
     def __str__(self):
-        return f"{self.item_name} x{self.quantity} (Bought in Era {self.purchase_era_index})"
-      
-# game_app/models.py
+        return f"{self.player.player_name}: {self.quantity} x {self.item_name}"
+
 class LeaderboardEntry(models.Model):
-    # If using Django's built-in User model:
-    # player_user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    
-    # Or, if using session-based tracking/username prompt:
+    """Records a single successful game completion time."""
     player_name = models.CharField(max_length=50, default='Anonymous Chrono-Trader')
-    
     time_seconds = models.IntegerField()
     date_recorded = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        # Crucial: Order by shortest time first
-        ordering = ['time_seconds', 'date_recorded'] 
+        ordering = ['time_seconds', 'date_recorded']
+        verbose_name_plural = "Leaderboard Entries"
 
     def __str__(self):
         return f"{self.player_name}: {self.time_seconds}s"
-

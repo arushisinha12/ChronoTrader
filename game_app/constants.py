@@ -52,6 +52,7 @@ ERAS = {
             "wine amphora": 150,
             "silk lace": 600,
             "coal sack": 120,
+            "feather cloak": 1000,
         }
     },
     
