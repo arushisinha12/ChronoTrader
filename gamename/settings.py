@@ -29,7 +29,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', get_random_secret_key())
 DEBUG = False
 
 # 3. ALLOWED_HOSTS: Set to your PythonAnywhere domain (Replace 'yourusername' with your actual username)
-ALLOWED_HOSTS = ['yourusername.pythonanywhere.com']
+ALLOWED_HOSTS = ['chronotrader.pythonanywhere.com',]
 
 
 # Application definition
