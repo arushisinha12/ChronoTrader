@@ -129,8 +129,6 @@ def game_console(request):
     # 4. HANDLE WIN CONDITION
     win_status = False
     final_time = None
-    # Use player.best_time_seconds, which is now preserved in reset_game
-    best_time_friendly = format_time(player.best_time_seconds) if player.best_time_seconds > 0 else "N/A"
     
     if fuel_count >= FUEL_GOAL:
         win_status = True
@@ -158,6 +156,12 @@ def game_console(request):
             player.game_start_time = None 
             player.save()
         
+    # ------------------------------------------------------------------
+    # ✅ FIXED: MOVE THE best_time_friendly CALCULATION TO THE END
+    # Ensures it uses the current player.best_time_seconds value (saved above if won)
+    # ------------------------------------------------------------------
+    best_time_friendly = format_time(player.best_time_seconds) if player.best_time_seconds > 0 else "N/A"
+    
     # 5. CONTEXT AND RENDER
     context = {
         'player': player,
