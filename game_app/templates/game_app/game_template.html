@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChronoMarket Console - Exact Reference Match</title>
+    
+    <meta name="base-static-url" content="{% static '' %}">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Trajan+Pro&display=swap'); /* Assuming Trajan Pro can be imported or is locally available */
 
@@ -582,6 +585,9 @@
             const eraNameElement = document.querySelector('.status-section .text-strong');
             if (!eraNameElement) return;
 
+            // ✅ FIX: Get the base static URL from the meta tag
+            const baseStaticUrl = document.querySelector('meta[name="base-static-url"]').content;
+
             const currentEra = eraNameElement.textContent.trim();
             const palette = eraPalettes[currentEra] || eraPalettes['Ancient Rome'];
             const rootStyle = document.documentElement.style;
@@ -592,8 +598,8 @@
             // Set RGB values for dynamic highlights
             rootStyle.setProperty('--color-era-highlight-rgb', hexToRgb(palette.highlight));
 
-            // Set the background image variable
-            const imageUrl = `url('{% static 'backgrounds/' %}${palette.background_image}')`;
+            // ✅ FIX: Construct the URL correctly using the baseStaticUrl
+            const imageUrl = `url('${baseStaticUrl}backgrounds/${palette.background_image}')`;
             rootStyle.setProperty('--initial-bg-image', imageUrl);
         }
 
@@ -694,7 +700,8 @@
             } else {
                 timeDisplay.textContent = '00m 00s';
             }
-        });
+
+        }); // End DOMContentLoaded
     </script>
 </body>
 </html>
