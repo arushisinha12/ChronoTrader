@@ -118,11 +118,11 @@ def game_console(request):
         }
         inventory.append(item_data)
 
-    # --- LOSS CONDITION CHECK ---
+    # --- LOSS CONDITION CHECK (UPDATED) ---
     total_potential_credits = player.credits + potential_sell_value
     
     if total_potential_credits < TIME_JUMP_COST and fuel_count < FUEL_GOAL:
-        messages.error(request, "GAME OVER! You have been stranded in time. Your current credits and total potential inventory value are below the cost of a temporal jump.")
+        # ✅ FIX: Redirect directly to game_over. The game_over view will add the message.
         return redirect('game_app:game_over')
     # --------------------------
         
@@ -157,8 +157,7 @@ def game_console(request):
             player.save()
         
     # ------------------------------------------------------------------
-    # ✅ FIXED: MOVE THE best_time_friendly CALCULATION TO THE END
-    # Ensures it uses the current player.best_time_seconds value (saved above if won)
+    # MOVE THE best_time_friendly CALCULATION TO THE END
     # ------------------------------------------------------------------
     best_time_friendly = format_time(player.best_time_seconds) if player.best_time_seconds > 0 else "N/A"
     
@@ -290,7 +289,6 @@ def time_jump(request, direction):
 
     # CHECK AND DEDUCT COST
     if player.credits < TIME_JUMP_COST:
-        # NOTE: This check is also done in game_console, but it's crucial here too
         messages.error(request, f"INSUFFICIENT FUNDS. Cannot afford the temporal traversal fee of {TIME_JUMP_COST} credits.")
         return redirect('game_app:game_console')
     
@@ -361,13 +359,15 @@ def reset_game(request):
             purchase_era_index=starting_era_index 
         )
 
-    game_instructions = (
-        f"Welcome, {player.player_name}! Your new protocol is active. "
-        "Your ultimate objective is to acquire 5 Gold Coins (Fuel). "
-        "Use the Jump buttons to travel the timeline and exploit market shifts. "
+    # ✅ FIX: Combined messages for a cleaner experience
+    full_message = (
+        f"New Protocol initiated for {player.player_name}. Welcome to the start of the timeline! "
+        "Your objective: acquire {FUEL_GOAL} Gold Coins (Temporal Fuel). "
+        "Use Jumps to exploit shifting markets. Traversal costs {TIME_JUMP_COST} credits. "
         "Remember: Items purchased locally are sold at a steep loss in the same era. You must travel to profit!"
-    )
-    messages.info(request, game_instructions)
+    ).format(FUEL_GOAL=FUEL_GOAL, TIME_JUMP_COST=TIME_JUMP_COST)
+
+    messages.info(request, full_message) # Using info for instructions
     
     messages.success(request, f"New Protocol initiated for {player.player_name}. Welcome to the start of the timeline.")
     return redirect('game_app:game_console')
@@ -398,7 +398,7 @@ def leaderboard_view(request):
     return render(request, 'game_app/leaderboard.html', context)
 
 
-# --- NEW GAME OVER VIEW (FIXED FORMAT_TIME ISSUE) ---
+# --- NEW GAME OVER VIEW (FIXED MESSAGE QUEUE) ---
 
 def game_over(request):
     """Renders the game over screen when player can no longer afford a time jump."""
@@ -406,17 +406,25 @@ def game_over(request):
     if not player:
         return redirect('game_app:start_game')
     
+    # ✅ FIX 1: Clear all messages before adding the game over message.
+    # This prevents any old 'Protocol activated' or 'Acquired' messages from showing.
+    storage = messages.get_messages(request)
+    storage.used = True 
+    
+    # ✅ FIX 2: Add the specific loss message here, just before rendering.
+    messages.error(request, "GAME OVER! You have been stranded in time. Your current credits and total potential inventory value are below the cost of a temporal jump.")
+
     # Reset game start time to mark the session as concluded
     if player.game_start_time:
         player.game_start_time = None 
         player.save()
     
-    # FIX: Calculate the friendly time string here before passing to context
+    # Calculate the friendly time string
     best_time_friendly = format_time(player.best_time_seconds) if player.best_time_seconds > 0 else "N/A"
         
     context = {
         'player': player,
         'TIME_JUMP_COST': TIME_JUMP_COST,
-        'best_time_friendly': best_time_friendly, # Passing the pre-formatted string
+        'best_time_friendly': best_time_friendly, 
     }
     return render(request, 'game_app/lose_screen.html', context)
