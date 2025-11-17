@@ -118,11 +118,11 @@ def game_console(request):
         }
         inventory.append(item_data)
 
-    # --- LOSS CONDITION CHECK (UPDATED) ---
+    # --- LOSS CONDITION CHECK ---
     total_potential_credits = player.credits + potential_sell_value
     
     if total_potential_credits < TIME_JUMP_COST and fuel_count < FUEL_GOAL:
-        # ✅ FIX: Redirect directly to game_over. The game_over view will add the message.
+        # Redirect directly to game_over. The message has been removed from here and the game_over view.
         return redirect('game_app:game_over')
     # --------------------------
         
@@ -339,7 +339,6 @@ def reset_game(request):
     player.current_era = ERA_ORDER[0]
     player.game_start_time = datetime.now(timezone.utc)
     # player.best_time_seconds persists
-    # player.best_time_seconds = 0 
 
     # Generate initial prices for the starting era
     player.current_prices = generate_era_prices(player.current_era)
@@ -359,7 +358,7 @@ def reset_game(request):
             purchase_era_index=starting_era_index 
         )
 
-    # ✅ FIX: Combined messages for a cleaner experience
+    # Combined messages for a cleaner experience
     full_message = (
         f"New Protocol initiated for {player.player_name}. Welcome to the start of the timeline! "
         "Your objective: acquire {FUEL_GOAL} Gold Coins (Temporal Fuel). "
@@ -367,8 +366,7 @@ def reset_game(request):
         "Remember: Items purchased locally are sold at a steep loss in the same era. You must travel to profit!"
     ).format(FUEL_GOAL=FUEL_GOAL, TIME_JUMP_COST=TIME_JUMP_COST)
 
-    messages.info(request, full_message) # Using info for instructions
-    
+    messages.info(request, full_message) 
     messages.success(request, f"New Protocol initiated for {player.player_name}. Welcome to the start of the timeline.")
     return redirect('game_app:game_console')
 
@@ -398,21 +396,21 @@ def leaderboard_view(request):
     return render(request, 'game_app/leaderboard.html', context)
 
 
-# --- NEW GAME OVER VIEW (FIXED MESSAGE QUEUE) ---
+# --- FINAL GAME OVER VIEW (NO MESSAGES) ---
 
 def game_over(request):
-    """Renders the game over screen when player can no longer afford a time jump."""
+    """
+    Renders the game over screen. 
+    Responsibility for displaying the loss message is shifted to the 'lose_screen.html' template.
+    """
     player = get_current_player(request)
     if not player:
         return redirect('game_app:start_game')
     
-    # ✅ FIX 1: Clear all messages before adding the game over message.
-    # This prevents any old 'Protocol activated' or 'Acquired' messages from showing.
+    # Clear existing messages to prevent any old trade/reset messages from appearing
+    # This keeps the lose_screen clean.
     storage = messages.get_messages(request)
     storage.used = True 
-    
-    # ✅ FIX 2: Add the specific loss message here, just before rendering.
-    messages.error(request, "GAME OVER! You have been stranded in time. Your current credits and total potential inventory value are below the cost of a temporal jump.")
 
     # Reset game start time to mark the session as concluded
     if player.game_start_time:
