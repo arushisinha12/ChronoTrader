@@ -122,7 +122,7 @@ def game_console(request):
     total_potential_credits = player.credits + potential_sell_value
     
     if total_potential_credits < TIME_JUMP_COST and fuel_count < FUEL_GOAL:
-        # Redirect directly to game_over. The message has been removed from here and the game_over view.
+        # Redirect directly to game_over. The message queue will be cleared there.
         return redirect('game_app:game_over')
     # --------------------------
         
@@ -396,19 +396,20 @@ def leaderboard_view(request):
     return render(request, 'game_app/leaderboard.html', context)
 
 
-# --- FINAL GAME OVER VIEW (NO MESSAGES) ---
+# --- FINAL GAME OVER VIEW (CLEARS ALL MESSAGES) ---
 
 def game_over(request):
     """
-    Renders the game over screen. 
-    Responsibility for displaying the loss message is shifted to the 'lose_screen.html' template.
+    Renders the game over screen. Clears the message queue to prevent old messages
+    (like trade successes) from persisting and being displayed on the new screen.
     """
     player = get_current_player(request)
     if not player:
         return redirect('game_app:start_game')
     
-    # Clear existing messages to prevent any old trade/reset messages from appearing
-    # This keeps the lose_screen clean.
+    # CRITICAL: Clear all messages currently in storage. 
+    # This prevents any old 'Acquired' or 'Liquidated' messages from a failed game
+    # from showing up on the clean 'lose_screen.html' or subsequent screens.
     storage = messages.get_messages(request)
     storage.used = True 
 
