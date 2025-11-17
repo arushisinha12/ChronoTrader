@@ -9,3 +9,5 @@
 5. Create migrations: `python3 manage.py makemigrations`
 6. Apply migrations: `python3 manage.py migrate`
 7. Run the development server: `python3 manage.py runserver`
+
+game link= https://chronotrader.pythonanywhere.com/console/
