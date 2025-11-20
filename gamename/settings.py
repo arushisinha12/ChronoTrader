@@ -139,7 +139,8 @@ STATICFILES_DIRS = []
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # settings.py
-
+# settings.py (Add this line)
+SESSION_COOKIE_DOMAIN = 'chronotrader.pythonanywhere.com'
 # This is the key fix for cookies not being sent in cross-site embeds.
 # It allows the browser to send the cookie when the site is embedded.
 SESSION_COOKIE_SAMESITE = None

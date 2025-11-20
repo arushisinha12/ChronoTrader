@@ -9,6 +9,7 @@ from .models import Player, Inventory, LeaderboardEntry
 # Assuming you have the following in constants.py:
 from .constants import ERA_ORDER, ERAS, FUEL_GOAL, generate_era_prices
 from django.views.decorators.clickjacking import xframe_options_exempt
+from django.views.decorators.csrf import csrf_exempt
 # ...
 
 # The cost of time travel remains
@@ -38,6 +39,7 @@ def get_current_player(request):
 # ## CORE VIEWS ##
 # ------------------------------------------------
 @xframe_options_exempt
+@csrf_exempt
 def start_game(request):
     """
     Handles player name entry and session creation/lookup. 
@@ -200,6 +202,7 @@ def game_console(request):
 
 
 @transaction.atomic
+@csrf_exempt
 def trade_item(request):
     if request.method != 'POST':
         return redirect('game_app:game_console')
@@ -296,6 +299,7 @@ def time_jump_backward(request):
 
 
 @transaction.atomic
+@csrf_exempt
 def time_jump(request, direction):
     global TIME_JUMP_COST 
     
