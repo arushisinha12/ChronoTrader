@@ -30,7 +30,7 @@ DEBUG = False
 
 # 3. ALLOWED_HOSTS: Set to your PythonAnywhere domain (Replace 'yourusername' with your actual username)
 ALLOWED_HOSTS = ['chronotrader.pythonanywhere.com',
-                 'progchamp.vercel.app/']
+                 'progchamp.vercel.app']
 
 
 # Application definition
@@ -155,7 +155,8 @@ CSRF_COOKIE_SECURE = True
 # Replace 'https://your-collaborators-app.vercel.app' with the exact Vercel URL
 # where your game is being embedded.
 CSRF_TRUSTED_ORIGINS = [
-    "https://chronotrader.pythonanywhere.com", # Your own domain
-    "https://progchamp.vercel.app/", 
+    "https://chronotrader.pythonanywhere.com",
+    "http://chronotrader.pythonanywhere.com", # Your own domain
+    "https://progchamp.vercel.app", 
     "https://*.vercel.app", # Optional: Allow any Vercel subdomain
 ]
