@@ -136,3 +136,25 @@ STATICFILES_DIRS = []
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# settings.py
+
+# This is the key fix for cookies not being sent in cross-site embeds.
+# It allows the browser to send the cookie when the site is embedded.
+SESSION_COOKIE_SAMESITE = None
+CSRF_COOKIE_SAMESITE = None
+
+# This is REQUIRED when SAMESITE is None, as per modern browser security.
+# PythonAnywhere uses HTTPS/SSL, so this should be True.
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+# settings.py
+
+# Replace 'https://your-collaborators-app.vercel.app' with the exact Vercel URL
+# where your game is being embedded.
+CSRF_TRUSTED_ORIGINS = [
+    "https://chronotrader.pythonanywhere.com", # Your own domain
+    "https://your-collaborators-app.vercel.app", 
+    "https://*.vercel.app", # Optional: Allow any Vercel subdomain
+]
