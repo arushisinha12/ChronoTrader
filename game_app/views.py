@@ -39,7 +39,7 @@ def get_current_player(request):
 def start_game(request):
     """
     Handles player name entry and session creation/lookup. 
-    Forces restart and displays full instructions for new players.
+    Forces restart and sets instructions message for new players.
     """
     player = get_current_player(request)
     
@@ -70,6 +70,7 @@ def start_game(request):
                 "💰 Remember: Items purchased locally are sold at a steep loss in the same era. You must travel to profit!"
             ).format(FUEL_GOAL=FUEL_GOAL, TIME_JUMP_COST=TIME_JUMP_COST)
 
+            # Use messages.success for the instructions so it stands out
             messages.success(request, full_instructions)
 
         # Store the player's ID in the session for persistence on this device
@@ -340,9 +341,9 @@ def reset_game(request):
     if not player:
         return redirect('game_app:start_game')
         
-    # Clear all persistent messages before a new game starts.
-    storage = messages.get_messages(request)
-    storage.used = True
+    # ❌ REMOVED MESSAGE CLEARING HERE: This was deleting the instructions from start_game
+    # storage = messages.get_messages(request)
+    # storage.used = True
     
     # --- 1. Define Initial Starting Inventory ---
     initial_items_data = [
@@ -375,7 +376,7 @@ def reset_game(request):
             purchase_era_index=starting_era_index 
         )
     
-    # Only add a general success message here. Instructions are added in start_game.
+    # Only add a general success message here. Instructions are handled in start_game.
     messages.info(request, "Temporal Protocol state successfully reset.")
     return redirect('game_app:game_console')
 
@@ -421,7 +422,8 @@ def game_over_clean(request):
     if not player:
         return redirect('game_app:start_game')
     
-    # CRITICAL: Aggressively clear all messages from storage.
+    # CRITICAL: Aggressively clear all messages from storage (this is still needed 
+    # for the game-over sequence to prevent old trade/jump messages from displaying).
     storage = messages.get_messages(request)
     storage.used = True
     
