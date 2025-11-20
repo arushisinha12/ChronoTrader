@@ -8,6 +8,8 @@ from django.db import models
 from .models import Player, Inventory, LeaderboardEntry
 # Assuming you have the following in constants.py:
 from .constants import ERA_ORDER, ERAS, FUEL_GOAL, generate_era_prices
+from django.views.decorators.clickjacking import xframe_options_exempt
+# ...
 
 # The cost of time travel remains
 TIME_JUMP_COST = 50
@@ -83,7 +85,7 @@ def start_game(request):
     # Show the name entry form
     return render(request, 'game_app/start_screen.html')
 
-
+@xframe_options_exempt
 def game_console(request):
     player = get_current_player(request)
     if not player:
