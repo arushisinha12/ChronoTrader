@@ -37,12 +37,14 @@ def get_current_player(request):
 # ------------------------------------------------
 
 def start_game(request):
-    """Handles player name entry and session creation/lookup. Forces restart if player is found."""
-    
+    """
+    Handles player name entry and session creation/lookup. 
+    Forces restart and displays full instructions for new players.
+    """
     player = get_current_player(request)
     
     if player:
-        # ✅ MODIFIED LOGIC: Player exists via session. Force a hard restart of the game state.
+        # Player exists via session. Force a hard restart of the game state.
         return redirect('game_app:reset_game')
 
     if request.method == 'POST':
@@ -54,11 +56,21 @@ def start_game(request):
         # Check if a player with this name already exists 
         try:
             player = Player.objects.get(player_name=player_name)
+            # Returning Player: Use a simple message
             messages.info(request, f"Welcome back, {player_name}! Preparing a new temporal protocol.")
         except Player.DoesNotExist:
-            # If new name, create a brand new player
+            # New Player: Create profile and add the full instructions as a message
             player = Player.objects.create(player_name=player_name)
-            messages.success(request, f"New Temporal Trader profile created for {player_name}.")
+            
+            # Define the full instructional message here for brand new players
+            full_instructions = (
+                f"NEW TEMPORAL TRADER PROTOCOL INITIATED for {player_name}!\n\n"
+                "Your objective: acquire {FUEL_GOAL} Gold Coins (Temporal Fuel).\n"
+                "Use **Time Jumps** to exploit shifting markets. Each jump costs {TIME_JUMP_COST} credits.\n"
+                "💰 Remember: Items purchased locally are sold at a steep loss in the same era. You must travel to profit!"
+            ).format(FUEL_GOAL=FUEL_GOAL, TIME_JUMP_COST=TIME_JUMP_COST)
+
+            messages.success(request, full_instructions)
 
         # Store the player's ID in the session for persistence on this device
         request.session['player_id'] = player.pk
@@ -328,6 +340,10 @@ def reset_game(request):
     if not player:
         return redirect('game_app:start_game')
         
+    # Clear all persistent messages before a new game starts.
+    storage = messages.get_messages(request)
+    storage.used = True
+    
     # --- 1. Define Initial Starting Inventory ---
     initial_items_data = [
         ('candy bar', 5), 
@@ -358,17 +374,9 @@ def reset_game(request):
             quantity=quantity,
             purchase_era_index=starting_era_index 
         )
-
-    # Combined messages for a cleaner experience
-    full_message = (
-        f"New Protocol initiated for {player.player_name}. Welcome to the start of the timeline! "
-        "Your objective: acquire {FUEL_GOAL} Gold Coins (Temporal Fuel). "
-        "Use Jumps to exploit shifting markets. Traversal costs {TIME_JUMP_COST} credits. "
-        "Remember: Items purchased locally are sold at a steep loss in the same era. You must travel to profit!"
-    ).format(FUEL_GOAL=FUEL_GOAL, TIME_JUMP_COST=TIME_JUMP_COST)
-
-    messages.info(request, full_message) 
-    messages.success(request, f"New Protocol initiated for {player.player_name}. Welcome to the start of the timeline.")
+    
+    # Only add a general success message here. Instructions are added in start_game.
+    messages.info(request, "Temporal Protocol state successfully reset.")
     return redirect('game_app:game_console')
 
 
