@@ -37,7 +37,7 @@ def get_current_player(request):
 # ------------------------------------------------
 # ## CORE VIEWS ##
 # ------------------------------------------------
-
+@xframe_options_exempt
 def start_game(request):
     """
     Handles player name entry and session creation/lookup. 
