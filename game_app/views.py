@@ -37,12 +37,13 @@ def get_current_player(request):
 # ------------------------------------------------
 
 def start_game(request):
-    """Handles player name entry and session creation/lookup."""
+    """Handles player name entry and session creation/lookup. Forces restart if player is found."""
+    
     player = get_current_player(request)
     
     if player:
-        # Player is identified via session, continue to game
-        return redirect('game_app:game_console')
+        # ✅ MODIFIED LOGIC: Player exists via session. Force a hard restart of the game state.
+        return redirect('game_app:reset_game')
 
     if request.method == 'POST':
         player_name = request.POST.get('player_name', '').strip()
@@ -53,7 +54,7 @@ def start_game(request):
         # Check if a player with this name already exists 
         try:
             player = Player.objects.get(player_name=player_name)
-            messages.info(request, f"Welcome back, {player_name}! Loading previous state.")
+            messages.info(request, f"Welcome back, {player_name}! Preparing a new temporal protocol.")
         except Player.DoesNotExist:
             # If new name, create a brand new player
             player = Player.objects.create(player_name=player_name)
@@ -62,7 +63,7 @@ def start_game(request):
         # Store the player's ID in the session for persistence on this device
         request.session['player_id'] = player.pk
         
-        # Initialize the game state (a hard reset for the identified player)
+        # Force the game state initialization (hard reset)
         return redirect('game_app:reset_game') 
             
     # Show the name entry form
@@ -122,7 +123,7 @@ def game_console(request):
     total_potential_credits = player.credits + potential_sell_value
     
     if total_potential_credits < TIME_JUMP_COST and fuel_count < FUEL_GOAL:
-        # Redirect directly to game_over. The message queue will be cleared there.
+        # Redirect to game_over, which now handles the clean up
         return redirect('game_app:game_over')
     # --------------------------
         
@@ -363,8 +364,7 @@ def reset_game(request):
         f"New Protocol initiated for {player.player_name}. Welcome to the start of the timeline! "
         "Your objective: acquire {FUEL_GOAL} Gold Coins (Temporal Fuel). "
         "Use Jumps to exploit shifting markets. Traversal costs {TIME_JUMP_COST} credits. "
-        "Remember: Items purchased locally are sold at a steep loss in the same era. You must travel to profit! "
-        "Click on instructions for more details."
+        "Remember: Items purchased locally are sold at a steep loss in the same era. You must travel to profit!"
     ).format(FUEL_GOAL=FUEL_GOAL, TIME_JUMP_COST=TIME_JUMP_COST)
 
     messages.info(request, full_message) 
@@ -397,22 +397,36 @@ def leaderboard_view(request):
     return render(request, 'game_app/leaderboard.html', context)
 
 
-# --- FINAL GAME OVER VIEW (CLEARS ALL MESSAGES) ---
+# --- GAME OVER VIEWS (TO CLEAR MESSAGES) ---
 
 def game_over(request):
     """
-    Renders the game over screen. Clears the message queue to prevent old messages
-    (like trade successes) from persisting and being displayed on the new screen.
+    The main loss handler. Redirects to the cleaner to clear messages.
+    """
+    return redirect('game_app:game_over_clean')
+
+def game_over_clean(request):
+    """
+    Intermediate view to ensure message queue is wiped before rendering the final screen.
     """
     player = get_current_player(request)
     if not player:
         return redirect('game_app:start_game')
     
-    # CRITICAL: Clear all messages currently in storage. 
-    # This prevents any old 'Acquired' or 'Liquidated' messages from a failed game
-    # from showing up on the clean 'lose_screen.html' or subsequent screens.
+    # CRITICAL: Aggressively clear all messages from storage.
     storage = messages.get_messages(request)
-    storage.used = True 
+    storage.used = True
+    
+    # Now, redirect to the actual view that renders the screen
+    return redirect('game_app:game_over_render')
+
+def game_over_render(request):
+    """
+    Renders the game over screen after the message queue has been cleared.
+    """
+    player = get_current_player(request)
+    if not player:
+        return redirect('game_app:start_game')
 
     # Reset game start time to mark the session as concluded
     if player.game_start_time:
