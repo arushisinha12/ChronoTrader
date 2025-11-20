@@ -66,8 +66,9 @@ def start_game(request):
             full_instructions = (
                 f"NEW TEMPORAL TRADER PROTOCOL INITIATED for {player_name}!\n\n"
                 "Your objective: acquire {FUEL_GOAL} Gold Coins (Temporal Fuel).\n"
-                "Use **Time Jumps** to exploit shifting markets. Each jump costs {TIME_JUMP_COST} credits.\n"
-                "💰 Remember: Items purchased locally are sold at a steep loss in the same era. You must travel to profit!"
+                "Use Time Jumps to exploit shifting markets. Each jump costs {TIME_JUMP_COST} credits.\n"
+                "💰 Remember: Items purchased locally are sold at a steep loss in the same era. You must travel to profit!\n"
+                "Click on instructions for more details"
             ).format(FUEL_GOAL=FUEL_GOAL, TIME_JUMP_COST=TIME_JUMP_COST)
 
             # Use messages.success for the instructions so it stands out
