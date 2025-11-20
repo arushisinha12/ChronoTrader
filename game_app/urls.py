@@ -14,4 +14,6 @@ urlpatterns = [
     path('reset/', views.reset_game, name='reset_game'),
     path('leaderboard/', views.leaderboard_view, name='leaderboard_view'),
     path('game_over/', views.game_over, name='game_over'),
+    path('game_over/clean/', views.game_over_clean, name='game_over_clean'),
+    path('game_over/render/', views.game_over_render, name='game_over_render'),
 ]
