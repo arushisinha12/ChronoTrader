@@ -363,7 +363,7 @@ def reset_game(request):
         f"New Protocol initiated for {player.player_name}. Welcome to the start of the timeline! "
         "Your objective: acquire {FUEL_GOAL} Gold Coins (Temporal Fuel). "
         "Use Jumps to exploit shifting markets. Traversal costs {TIME_JUMP_COST} credits. "
-        "Remember: Items purchased locally are sold at a steep loss in the same era. You must travel to profit!"
+        "Remember: Items purchased locally are sold at a steep loss in the same era. You must travel to profit! "
         "Click on instructions for more details."
     ).format(FUEL_GOAL=FUEL_GOAL, TIME_JUMP_COST=TIME_JUMP_COST)
 
