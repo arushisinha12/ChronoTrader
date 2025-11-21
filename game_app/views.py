@@ -9,7 +9,7 @@ from .models import Player, Inventory, LeaderboardEntry
 # Assuming you have the following in constants.py:
 from .constants import ERA_ORDER, ERAS, FUEL_GOAL, generate_era_prices
 from django.views.decorators.clickjacking import xframe_options_exempt
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt # <-- KEEP THIS IMPORT
 # ...
 
 # The cost of time travel remains
@@ -38,8 +38,8 @@ def get_current_player(request):
 # ------------------------------------------------
 # ## CORE VIEWS ##
 # ------------------------------------------------
-#@xframe_options_exempt
-#@csrf_exempt
+@xframe_options_exempt
+@csrf_exempt # <-- ADDED EXPLICITLY TO HANDLE POST REQUESTS
 def start_game(request):
     """
     Handles player name entry and session creation/lookup. 
@@ -201,8 +201,8 @@ def game_console(request):
     return render(request, 'game_app/game_template.html', context) 
 
 
-#@transaction.atomic
-#@csrf_exempt
+@transaction.atomic
+@csrf_exempt # <-- ADDED EXPLICITLY TO HANDLE POST REQUESTS
 def trade_item(request):
     if request.method != 'POST':
         return redirect('game_app:game_console')
@@ -291,15 +291,17 @@ def trade_item(request):
     # After a trade, redirect back to the console which will re-run the loss check
     return redirect('game_app:game_console')
 
+@csrf_exempt # <-- ADDED EXPLICITLY TO HANDLE POST REQUESTS
 def time_jump_forward(request):
     return time_jump(request, 'forward')
 
+@csrf_exempt # <-- ADDED EXPLICITLY TO HANDLE POST REQUESTS
 def time_jump_backward(request):
     return time_jump(request, 'backward')
 
 
 @transaction.atomic
-#@csrf_exempt
+@csrf_exempt # <-- ADDED EXPLICITLY TO HANDLE POST REQUESTS
 def time_jump(request, direction):
     global TIME_JUMP_COST 
     
