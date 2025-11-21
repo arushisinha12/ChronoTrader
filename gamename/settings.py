@@ -149,8 +149,8 @@ CSRF_COOKIE_SAMESITE = None
 
 # This is REQUIRED when SAMESITE is None, as per modern browser security.
 # PythonAnywhere uses HTTPS/SSL, so this should be True.
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 
 # settings.py
 
