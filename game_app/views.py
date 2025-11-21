@@ -82,7 +82,7 @@ def start_game(request):
         request.session['player_id'] = player.pk
         
         # Force the game state initialization (hard reset)
-        return redirect('game_app:reset_game') 
+        '''return redirect('game_app:reset_game')''' 
             
     # Show the name entry form
     return render(request, 'game_app/start_screen.html')
