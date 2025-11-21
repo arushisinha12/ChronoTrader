@@ -30,7 +30,8 @@ DEBUG = False
 
 # 3. ALLOWED_HOSTS: Set to your PythonAnywhere domain (Replace 'yourusername' with your actual username)
 ALLOWED_HOSTS = ['chronotrader.pythonanywhere.com',
-                 'progchamp.vercel.app']
+                 'progchamp.vercel.app',
+                 '*',]
 
 
 # Application definition
@@ -52,7 +53,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    #'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 ROOT_URLCONF = 'gamename.urls'
