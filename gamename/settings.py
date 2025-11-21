@@ -105,7 +105,7 @@ USE_TZ = True
 
 
 # ----------------------------------------------------------------------
-# 🖼️ STATIC FILES CONFIGURATION (FIXED)
+# 🖼️ STATIC FILES CONFIGURATION 
 # ----------------------------------------------------------------------
 
 STATIC_URL = 'static/'
@@ -115,11 +115,12 @@ STATICFILES_DIRS = []
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- Cookie Settings (No longer required if middleware is removed, but harmless) ---
-SESSION_COOKIE_SAMESITE = None
-CSRF_COOKIE_SAMESITE = None
+# --- Cookie Settings (Mandatory for Iframe/Third-Party Context) ---
+# CRITICAL: Must be the string 'None' (case-sensitive) for cross-site cookies.
+SESSION_COOKIE_SAMESITE = 'None' 
+CSRF_COOKIE_SAMESITE = 'None'
 
-SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True # Requires HTTPS to work.
 CSRF_COOKIE_SECURE = True
 
 CSRF_TRUSTED_ORIGINS = [
