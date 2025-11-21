@@ -50,7 +50,8 @@ def start_game(request):
     # FIX: If a player exists in the session and it's a simple page load (GET), 
     # send them straight to the console to prevent a reset loop.
     if player and request.method == 'GET':
-        return redirect('game_app:game_console')
+        messages.info(request, f"Welcome back, {player.player_name}. Initiating new Temporal Protocol.")
+        return redirect('game_app:reset_game')
 
     if request.method == 'POST':
         player_name = request.POST.get('player_name', '').strip()
