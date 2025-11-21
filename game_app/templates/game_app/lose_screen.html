@@ -108,8 +108,6 @@
             letter-spacing: 1px;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
             transition: background-color 0.2s, transform 0.1s;
-            text-decoration: none; /* Add for anchor tags */
-            display: inline-block; /* Add for anchor tags */
         }
         .btn-success {
             /* Using success color for the button to encourage restart */
@@ -145,12 +143,13 @@
             </p>
         </div>
         
-        <!-- Changed to a clean link that hits the start_game view, which forces a reset for returning players -->
-        <a href="{% url 'game_app:start_game' %}" class="btn btn-success">Rethink Protocol / Restart</a>
+        <form action="{% url 'game_app:reset_game' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">Rethink Protocol / Restart</button>
+        </form>
         
         <div style="margin-top: 15px;">
-            <!-- Corrected URL name to 'leaderboard' -->
-            <a href="{% url 'game_app:leaderboard' %}" class="btn" style="background-color: var(--color-border); color: var(--color-font); padding: 8px 20px;">View Global Leaderboard</a>
+            <a href="{% url 'game_app:leaderboard_view' %}" class="btn" style="background-color: var(--color-border); color: var(--color-font); padding: 8px 20px;">View Global Leaderboard</a>
         </div>
     </div>
 </body>

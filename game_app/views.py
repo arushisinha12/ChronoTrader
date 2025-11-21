@@ -122,8 +122,7 @@ def game_console(request):
     total_potential_credits = player.credits + potential_sell_value
     
     if total_potential_credits < TIME_JUMP_COST and fuel_count < FUEL_GOAL:
-        # Redirect directly to the render view to avoid complex redirect chain bugs
-        return redirect('game_app:game_over_render')
+        return redirect('game_app:game_over')
     # --------------------------
         
     # 4. HANDLE WIN CONDITION
@@ -376,13 +375,26 @@ def leaderboard_view(request):
     return render(request, 'game_app/leaderboard.html', context)
 
 
-# --- REMOVED game_over and game_over_clean views to simplify redirect chain ---
-# The loss condition in game_console now redirects directly to game_over_render.
+@transaction.atomic
+def game_over(request):
+    return redirect('game_app:game_over_clean')
+
+@transaction.atomic
+def game_over_clean(request):
+    player = get_current_player(request)
+    if not player:
+        return redirect('game_app:start_game')
+    
+    storage = messages.get_messages(request)
+    storage.used = True
+    
+    return redirect('game_app:game_over_render')
 
 @transaction.atomic
 def game_over_render(request):
     """
-    Renders the game over screen. Stops the timer and retrieves the best time.
+    Renders the game over screen after the message queue has been cleared.
+    The `format_time` utility handles converting 0 seconds to "N/A".
     """
     player = get_current_player(request)
     if not player:
