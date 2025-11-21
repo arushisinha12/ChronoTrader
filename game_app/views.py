@@ -9,7 +9,7 @@ from .models import Player, Inventory, LeaderboardEntry
 # Assuming you have the following in constants.py:
 from .constants import ERA_ORDER, ERAS, FUEL_GOAL, generate_era_prices
 from django.views.decorators.clickjacking import xframe_options_exempt
-from django.views.decorators.csrf import csrf_exempt # <-- KEEP THIS IMPORT
+from django.views.decorators.csrf import csrf_exempt 
 # ...
 
 # The cost of time travel remains
@@ -39,17 +39,18 @@ def get_current_player(request):
 # ## CORE VIEWS ##
 # ------------------------------------------------
 @xframe_options_exempt
-@csrf_exempt # <-- ADDED EXPLICITLY TO HANDLE POST REQUESTS
+@csrf_exempt
 def start_game(request):
     """
     Handles player name entry and session creation/lookup. 
-    Forces restart and sets instructions message for new players.
+    Crucial fix: Only force reset on POST (explicit start), not on GET (refresh/session exists).
     """
     player = get_current_player(request)
     
-    if player:
-        # Player exists via session. Force a hard restart of the game state.
-        return redirect('game_app:reset_game')
+    # FIX: If a player exists in the session and it's a simple page load (GET), 
+    # send them straight to the console to prevent a reset loop.
+    if player and request.method == 'GET':
+        return redirect('game_app:game_console')
 
     if request.method == 'POST':
         player_name = request.POST.get('player_name', '').strip()
@@ -57,32 +58,28 @@ def start_game(request):
             messages.error(request, "Please enter a valid player name.")
             return render(request, 'game_app/start_screen.html') 
 
-        # Check if a player with this name already exists 
+        # 1. Look up or create the player
         try:
             player = Player.objects.get(player_name=player_name)
-            # Returning Player: Use a simple message
             messages.info(request, f"Welcome back, {player_name}! Preparing a new temporal protocol.")
         except Player.DoesNotExist:
-            # New Player: Create profile and add the full instructions as a message
             player = Player.objects.create(player_name=player_name)
             
-            # Define the full instructional message here for brand new players
+            # Use f-string for safer formatting
             full_instructions = (
                 f"NEW TEMPORAL TRADER PROTOCOL INITIATED for {player_name}!\n\n"
-                "Your objective: acquire {FUEL_GOAL} Gold Coins (Temporal Fuel).\n"
-                "Use Time Jumps to exploit shifting markets. Each jump costs {TIME_JUMP_COST} credits.\n"
+                f"Your objective: acquire {FUEL_GOAL} Gold Coins (Temporal Fuel).\n"
+                f"Use Time Jumps to exploit shifting markets. Each jump costs {TIME_JUMP_COST} credits.\n"
                 "💰 Remember: Items purchased locally are sold at a steep loss in the same era. You must travel to profit!\n"
                 "Click on instructions for more details"
-            ).format(FUEL_GOAL=FUEL_GOAL, TIME_JUMP_COST=TIME_JUMP_COST)
-
-            # Use messages.success for the instructions so it stands out
+            )
             messages.success(request, full_instructions)
 
-        # Store the player's ID in the session for persistence on this device
+        # 2. Store the player's ID in the session
         request.session['player_id'] = player.pk
         
-        # Force the game state initialization (hard reset)
-        '''return redirect('game_app:reset_game')''' 
+        # 3. Force the game state initialization (hard reset)
+        return redirect('game_app:reset_game') 
             
     # Show the name entry form
     return render(request, 'game_app/start_screen.html')
@@ -202,7 +199,7 @@ def game_console(request):
 
 
 @transaction.atomic
-@csrf_exempt # <-- ADDED EXPLICITLY TO HANDLE POST REQUESTS
+@csrf_exempt
 def trade_item(request):
     if request.method != 'POST':
         return redirect('game_app:game_console')
@@ -291,17 +288,17 @@ def trade_item(request):
     # After a trade, redirect back to the console which will re-run the loss check
     return redirect('game_app:game_console')
 
-@csrf_exempt # <-- ADDED EXPLICITLY TO HANDLE POST REQUESTS
+@csrf_exempt
 def time_jump_forward(request):
     return time_jump(request, 'forward')
 
-@csrf_exempt # <-- ADDED EXPLICITLY TO HANDLE POST REQUESTS
+@csrf_exempt
 def time_jump_backward(request):
     return time_jump(request, 'backward')
 
 
 @transaction.atomic
-@csrf_exempt # <-- ADDED EXPLICITLY TO HANDLE POST REQUESTS
+@csrf_exempt
 def time_jump(request, direction):
     global TIME_JUMP_COST 
     
@@ -350,10 +347,6 @@ def reset_game(request):
     if not player:
         return redirect('game_app:start_game')
         
-    # ❌ REMOVED MESSAGE CLEARING HERE: This was deleting the instructions from start_game
-    # storage = messages.get_messages(request)
-    # storage.used = True
-    
     # --- 1. Define Initial Starting Inventory ---
     initial_items_data = [
         ('candy bar', 5), 
