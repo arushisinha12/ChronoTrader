@@ -3,21 +3,19 @@ from datetime import datetime, timezone
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.db import transaction
-# Required import for database aggregation functions
 from django.db import models 
 from .models import Player, Inventory, LeaderboardEntry
-# Assuming you have the following in constants.py:
 from .constants import ERA_ORDER, ERAS, FUEL_GOAL, generate_era_prices
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt 
-# ...
 
-# The cost of time travel remains
 TIME_JUMP_COST = 50
 
 # --- UTILITY FUNCTIONS ---
 def format_time(seconds):
-    """Converts total seconds into M:SS format."""
+    """Converts total seconds into M:SS format, or returns N/A if time is 0."""
+    if seconds <= 0:
+        return "N/A" # <-- Handles the new player/never-won case
     minutes = seconds // 60
     secs = seconds % 60
     return f"{minutes:02d}m {secs:02d}s"
@@ -30,7 +28,6 @@ def get_current_player(request):
     try:
         return Player.objects.get(pk=player_id)
     except Player.DoesNotExist:
-        # Clear stale session data
         if 'player_id' in request.session:
             del request.session['player_id']
         return None
@@ -41,17 +38,11 @@ def get_current_player(request):
 @xframe_options_exempt
 @csrf_exempt
 def start_game(request):
-    """
-    Handles player name entry and session creation/lookup. 
-    Crucial fix: Only force reset on POST (explicit start), not on GET (refresh/session exists).
-    """
     player = get_current_player(request)
     
-    # FIX: If a player exists in the session and it's a simple page load (GET), 
-    # send them straight to the console to prevent a reset loop.
     if player and request.method == 'GET':
         messages.info(request, f"Welcome back, {player.player_name}. Initiating new Temporal Protocol.")
-        return redirect('game_app:reset_game')
+        return redirect('game_app:reset_game') 
 
     if request.method == 'POST':
         player_name = request.POST.get('player_name', '').strip()
@@ -59,14 +50,12 @@ def start_game(request):
             messages.error(request, "Please enter a valid player name.")
             return render(request, 'game_app/start_screen.html') 
 
-        # 1. Look up or create the player
         try:
             player = Player.objects.get(player_name=player_name)
             messages.info(request, f"Welcome back, {player_name}! Preparing a new temporal protocol.")
         except Player.DoesNotExist:
             player = Player.objects.create(player_name=player_name)
             
-            # Use f-string for safer formatting
             full_instructions = (
                 f"NEW TEMPORAL TRADER PROTOCOL INITIATED for {player_name}!\n\n"
                 f"Your objective: acquire {FUEL_GOAL} Gold Coins (Temporal Fuel).\n"
@@ -76,14 +65,11 @@ def start_game(request):
             )
             messages.success(request, full_instructions)
 
-        # 2. Store the player's ID in the session
         request.session['player_id'] = player.pk
-        request.session.modified = True # <-- CRITICAL ADDITION: Ensures session is saved immediately
+        request.session.modified = True 
         
-        # 3. Force the game state initialization (hard reset)
         return redirect('game_app:reset_game') 
             
-    # Show the name entry form
     return render(request, 'game_app/start_screen.html')
 
 @xframe_options_exempt
@@ -96,7 +82,6 @@ def game_console(request):
     current_era_name = ERA_ORDER[current_era_index]
     static_era_data = ERAS[current_era_name]
     
-    # 1. PRICE FLUCTUATION CHECK
     fluctuating_prices_data = player.current_prices
     
     if not fluctuating_prices_data or not fluctuating_prices_data.get('buy_prices'):
@@ -104,19 +89,16 @@ def game_console(request):
         player.current_prices = fluctuating_prices_data
         player.save()
         
-    # 2. CONSTRUCT ERA DATA for TEMPLATE
     era_data_for_template = {
         'currency': static_era_data['currency'],
         'trade_items': fluctuating_prices_data.get('buy_prices', {}),
         'sell_prices': fluctuating_prices_data.get('sell_prices', {}),
     }
 
-    # 3. PREPARE INVENTORY FOR DISPLAY AND CHECK LOSS CONDITION
     inventory = []
     fuel_count = 0
     player_inventory = Inventory.objects.filter(player=player, quantity__gt=0)
     
-    # Calculate potential cash from selling ALL inventory items at current market prices
     potential_sell_value = 0
     sell_prices = fluctuating_prices_data.get('sell_prices', {})
     
@@ -140,7 +122,6 @@ def game_console(request):
     total_potential_credits = player.credits + potential_sell_value
     
     if total_potential_credits < TIME_JUMP_COST and fuel_count < FUEL_GOAL:
-        # Redirect to game_over, which now handles the clean up
         return redirect('game_app:game_over')
     # --------------------------
         
@@ -155,13 +136,16 @@ def game_console(request):
             time_elapsed_seconds = int((datetime.now(timezone.utc) - player.game_start_time).total_seconds())
             final_time = format_time(time_elapsed_seconds)
             
-            # 1. Record this completed run to the central Leaderboard
+            # 1. Record this completed run
             LeaderboardEntry.objects.create(
                 player_name=player.player_name, 
                 time_seconds=time_elapsed_seconds
             )
 
             # 2. Check and update personal best for the player object
+            # This logic handles: 
+            # a) New player (best_time_seconds == 0) -> New time is the best time.
+            # b) Old player -> Only update if current time is faster.
             is_new_best = player.best_time_seconds == 0 or time_elapsed_seconds < player.best_time_seconds
             
             if is_new_best:
@@ -170,14 +154,12 @@ def game_console(request):
             else:
                  messages.success(request, f"SUCCESS! Protocol completed in {final_time}. Your time has been recorded.")
             
-            # Reset game start time so refreshing doesn't keep generating leaderboard entries
             player.game_start_time = None 
             player.save()
         
     # ------------------------------------------------------------------
-    # MOVE THE best_time_friendly CALCULATION TO THE END
-    # ------------------------------------------------------------------
-    best_time_friendly = format_time(player.best_time_seconds) if player.best_time_seconds > 0 else "N/A"
+    # best_time_friendly calculation uses the utility function which returns "N/A" if best_time_seconds is 0.
+    best_time_friendly = format_time(player.best_time_seconds)
     
     # 5. CONTEXT AND RENDER
     context = {
@@ -187,12 +169,11 @@ def game_console(request):
         'inventory': inventory,
         'fuel_count': fuel_count,
         'FUEL_GOAL': FUEL_GOAL,
-        'TIME_JUMP_COST': TIME_JUMP_COST, # Added for completeness
+        'TIME_JUMP_COST': TIME_JUMP_COST,
         'current_era_index': current_era_index, 
         'game_start_timestamp': player.game_start_time.timestamp() * 1000 if player.game_start_time else None,
         'best_time_friendly': best_time_friendly,
         
-        # Win screen context (for modal)
         'win_status': win_status,
         'final_time': final_time,
     }
@@ -287,7 +268,6 @@ def trade_item(request):
 
         messages.success(request, f"Liquidated {quantity} x {item_name} for {revenue} credits.")
         
-    # After a trade, redirect back to the console which will re-run the loss check
     return redirect('game_app:game_console')
 
 @csrf_exempt
@@ -309,7 +289,6 @@ def time_jump(request, direction):
         messages.error(request, "Session expired. Please start a new game.")
         return redirect('game_app:start_game')
 
-    # CHECK AND DEDUCT COST
     if player.credits < TIME_JUMP_COST:
         messages.error(request, f"INSUFFICIENT FUNDS. Cannot afford the temporal traversal fee of {TIME_JUMP_COST} credits.")
         return redirect('game_app:game_console')
@@ -329,11 +308,9 @@ def time_jump(request, direction):
         messages.error(request, "Invalid jump direction.")
         return redirect('game_app:game_console')
 
-    # Update Player State
     player.current_era_index = next_index
     player.current_era = ERA_ORDER[next_index]
     
-    # GENERATE AND SAVE NEW FLUCTUATING PRICES
     new_era_name = ERA_ORDER[next_index]
     new_prices_data = generate_era_prices(new_era_name)
     player.current_prices = new_prices_data
@@ -349,27 +326,21 @@ def reset_game(request):
     if not player:
         return redirect('game_app:start_game')
         
-    # --- 1. Define Initial Starting Inventory ---
     initial_items_data = [
         ('candy bar', 5), 
         ('rubber duck', 2),
     ]
         
-    # --- 2. Reset Player fields for the identified player ---
     player.credits = 100
     player.current_era_index = 0
     player.current_era = ERA_ORDER[0]
     player.game_start_time = datetime.now(timezone.utc)
-    # player.best_time_seconds persists
-
-    # Generate initial prices for the starting era
+    
     player.current_prices = generate_era_prices(player.current_era)
     
-    # Save Player and clear existing Inventory (only for THIS player)
     player.save()
     Inventory.objects.filter(player=player).delete()
     
-    # --- 3. ADD INITIAL INVENTORY ITEMS ---
     starting_era_index = player.current_era_index
     
     for item_name, quantity in initial_items_data:
@@ -380,21 +351,15 @@ def reset_game(request):
             purchase_era_index=starting_era_index 
         )
     
-    # Only add a general success message here. Instructions are handled in start_game.
     messages.info(request, "Temporal Protocol state successfully reset.")
     return redirect('game_app:game_console')
 
 
-# --- LEADERBOARD (SHOWS ONLY BEST TIME PER PLAYER) ---
-
 def leaderboard_view(request):
-    # 1. Group records by player_name and find the minimum (best) time
     best_scores_queryset = LeaderboardEntry.objects.values('player_name').annotate(
         best_time_seconds=models.Min('time_seconds')
-    # 2. Order by the best time (fastest first)
     ).order_by('best_time_seconds')[:10]
     
-    # 3. Process and format the results for the template
     formatted_entries = []
     for rank, entry in enumerate(best_scores_queryset, 1):
         formatted_entries.append({
@@ -410,45 +375,38 @@ def leaderboard_view(request):
     return render(request, 'game_app/leaderboard.html', context)
 
 
-# --- GAME OVER VIEWS (TO CLEAR MESSAGES) ---
-
+@transaction.atomic
 def game_over(request):
-    """
-    The main loss handler. Redirects to the cleaner to clear messages.
-    """
     return redirect('game_app:game_over_clean')
 
+@transaction.atomic
 def game_over_clean(request):
-    """
-    Intermediate view to ensure message queue is wiped before rendering the final screen.
-    """
     player = get_current_player(request)
     if not player:
         return redirect('game_app:start_game')
     
-    # CRITICAL: Aggressively clear all messages from storage (this is still needed 
-    # for the game-over sequence to prevent old trade/jump messages from displaying).
     storage = messages.get_messages(request)
     storage.used = True
     
-    # Now, redirect to the actual view that renders the screen
     return redirect('game_app:game_over_render')
 
+@transaction.atomic
 def game_over_render(request):
     """
     Renders the game over screen after the message queue has been cleared.
+    The `format_time` utility handles converting 0 seconds to "N/A".
     """
     player = get_current_player(request)
     if not player:
         return redirect('game_app:start_game')
 
-    # Reset game start time to mark the session as concluded
+    # Ensure the timer is stopped
     if player.game_start_time:
         player.game_start_time = None 
         player.save()
     
-    # Calculate the friendly time string
-    best_time_friendly = format_time(player.best_time_seconds) if player.best_time_seconds > 0 else "N/A"
+    # Calculate the friendly time string (will be "N/A" if best_time_seconds is 0)
+    best_time_friendly = format_time(player.best_time_seconds)
         
     context = {
         'player': player,
