@@ -87,7 +87,7 @@ def start_game(request):
     # Show the name entry form
     return render(request, 'game_app/start_screen.html')
 
-#@xframe_options_exempt
+@xframe_options_exempt
 def game_console(request):
     player = get_current_player(request)
     if not player:
