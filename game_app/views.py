@@ -47,9 +47,9 @@ def start_game(request):
     """
     player = get_current_player(request)
     
-    '''if player:
+    if player:
         # Player exists via session. Force a hard restart of the game state.
-        return redirect('game_app:reset_game')'''
+        return redirect('game_app:reset_game')
 
     if request.method == 'POST':
         player_name = request.POST.get('player_name', '').strip()
