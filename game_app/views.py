@@ -77,9 +77,10 @@ def start_game(request):
 
         # 2. Store the player's ID in the session
         request.session['player_id'] = player.pk
+        request.session.modified = True # <-- CRITICAL ADDITION: Ensures session is saved immediately
         
         # 3. Force the game state initialization (hard reset)
-        '''return redirect('game_app:reset_game')''' 
+        return redirect('game_app:reset_game') 
             
     # Show the name entry form
     return render(request, 'game_app/start_screen.html')
